@@ -73,6 +73,6 @@ PY
 done
 
 cd "${UI_DIR}"
-JARVIS_BRAIN_API_URL="http://127.0.0.1:8000" "${ELECTRON_BIN}" --no-sandbox .
+JARVIS_BRAIN_API_URL="http://127.0.0.1:8000" "${ELECTRON_BIN}" . --no-sandbox
 ELECTRON_PID=$!
 wait "${ELECTRON_PID}"
