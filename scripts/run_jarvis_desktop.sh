@@ -8,6 +8,7 @@ BRAIN_DIR="${ROOT_DIR}/services/brain"
 CORE_DIR="${ROOT_DIR}/services/local-core-rs"
 AUTOMATION_DIR="${ROOT_DIR}/services/automation-node"
 LOG_DIR="${ROOT_DIR}/runtime/logs"
+CORE_BIN="${CORE_DIR}/target/debug/jarvis-local-core"
 
 mkdir -p "${LOG_DIR}"
 
@@ -45,7 +46,11 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${CORE_DIR}"
-cargo run >"${CORE_LOG}" 2>&1 &
+if [[ -x "${CORE_BIN}" ]]; then
+  "${CORE_BIN}" >"${CORE_LOG}" 2>&1 &
+else
+  cargo run >"${CORE_LOG}" 2>&1 &
+fi
 CORE_PID=$!
 
 cd "${AUTOMATION_DIR}"
