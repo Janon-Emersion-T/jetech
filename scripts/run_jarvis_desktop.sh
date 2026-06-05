@@ -72,6 +72,7 @@ PY
 done
 
 cd "${UI_DIR}"
+unset ELECTRON_RUN_AS_NODE
 JARVIS_BRAIN_API_URL="http://127.0.0.1:8000" npm run desktop
 ELECTRON_PID=$!
 wait "${ELECTRON_PID}"
