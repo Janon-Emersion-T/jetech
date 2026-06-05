@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+EVOLUTION_DIR="${ROOT_DIR}/runtime/data/evolution"
+TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+
+mkdir -p "${EVOLUTION_DIR}"
+
+cat > "${EVOLUTION_DIR}/self-evolution-${TIMESTAMP}.md" <<EOF
+# Jarvis Self-Evolution Review
+
+- Timestamp: ${TIMESTAMP}
+- Repository HEAD: $(git -C "${ROOT_DIR}" rev-parse --short HEAD 2>/dev/null || echo unknown)
+- Pending git changes:
+$(git -C "${ROOT_DIR}" status --short 2>/dev/null || true)
+
+## Review Checklist
+
+1. Reassess backend service health, approval discipline, and deployment safety.
+2. Identify repetitive operator actions that should become tools, workflows, or memory.
+3. Promote stable manual decisions into decision memory or lifecycle policy.
+4. Queue safe self-upgrade tasks before autonomous code changes.
+EOF
+
+echo "Self-evolution report created at ${EVOLUTION_DIR}/self-evolution-${TIMESTAMP}.md"

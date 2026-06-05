@@ -1,0 +1,15 @@
+[Unit]
+Description=Jarvis Brain API
+After=network.target
+PartOf=jarvis-stack.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/jetech/services/brain
+ExecStart=/var/www/jetech/services/brain/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=jarvis-stack.target

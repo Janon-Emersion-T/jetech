@@ -1,0 +1,14 @@
+[Unit]
+Description=Jarvis Local Core
+After=network.target
+PartOf=jarvis-stack.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/jetech/services/local-core-rs
+ExecStart=/var/www/jetech/services/local-core-rs/target/debug/jarvis-local-core
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=jarvis-stack.target

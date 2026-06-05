@@ -1,0 +1,14 @@
+[Unit]
+Description=Jarvis Automation Node
+After=network.target
+PartOf=jarvis-stack.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/jetech/services/automation-node
+ExecStart=/usr/bin/env node src/server.js
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=jarvis-stack.target

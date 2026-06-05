@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+UI_DIR="${ROOT_DIR}/apps/desktop-ui"
+
+pkill -TERM -f "${UI_DIR}/node_modules/electron/dist/electron \\." || true
+pkill -TERM -f "${UI_DIR}/node_modules/.bin/electron \\." || true
+pkill -TERM -f "npm run desktop" || true
+systemctl --user stop jarvis-brain.service jarvis-local-core.service jarvis-automation.service jarvis-stack.target || true
+
+echo "Jarvis desktop and backend services stopped."

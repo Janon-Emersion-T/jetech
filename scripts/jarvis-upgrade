@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+"${ROOT_DIR}/scripts/upgrade_jarvis.sh" "${1:-main}"
+systemctl --user daemon-reload
+systemctl --user restart jarvis-stack.target
+
+echo "Jarvis upgraded and backend services restarted."

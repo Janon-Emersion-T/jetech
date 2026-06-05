@@ -1,0 +1,6 @@
+[Unit]
+Description=Jarvis Backend Stack
+Wants=jarvis-local-core.service jarvis-automation.service jarvis-brain.service
+
+[Install]
+WantedBy=default.target

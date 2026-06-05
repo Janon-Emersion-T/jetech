@@ -14,3 +14,4 @@ if [[ -d .git ]]; then
 fi
 
 "${ROOT_DIR}/scripts/install_jarvis.sh"
+"${ROOT_DIR}/scripts/migrate_v1_data.py" --apply || true

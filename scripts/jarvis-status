@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+systemctl --user status jarvis-brain.service jarvis-local-core.service jarvis-automation.service --no-pager
