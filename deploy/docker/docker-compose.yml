@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  brain-api:
+    build:
+      context: ../..
+      dockerfile: services/brain/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../runtime:/opt/jarvis/runtime
+
+  local-core:
+    build:
+      context: ../..
+      dockerfile: services/local-core-rs/Dockerfile
+    ports:
+      - "9100:9100"
+
+  automation-node:
+    build:
+      context: ../..
+      dockerfile: services/automation-node/Dockerfile
+    ports:
+      - "9200:9200"

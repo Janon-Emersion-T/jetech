@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+runtime/data/*.db
+runtime/logs/*.log
+runtime/backups/*
+!runtime/backups/.gitkeep
+apps/desktop-ui/dist/
+services/automation-node/node_modules/
+services/local-core-rs/target/

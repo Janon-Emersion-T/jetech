@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: client-template
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-app
+  namespace: client-template
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-app
+  template:
+    metadata:
+      labels:
+        app: client-app
+    spec:
+      containers:
+        - name: app
+          image: registry.local/client-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: client-db
+                  key: url
+          volumeMounts:
+            - name: client-logs
+              mountPath: /var/log/client-app
+            - name: client-backups
+              mountPath: /var/backups/client-app
+      volumes:
+        - name: client-logs
+          persistentVolumeClaim:
+            claimName: client-logs-pvc
+        - name: client-backups
+          persistentVolumeClaim:
+            claimName: client-backups-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-app
+  namespace: client-template
+spec:
+  selector:
+    app: client-app
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: client-app
+  namespace: client-template
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - client.example.com
+      secretName: client-app-tls
+  rules:
+    - host: client.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client-app
+                port:
+                  number: 80

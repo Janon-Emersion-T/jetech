@@ -1,0 +1,50 @@
+{
+  "version": "2.0.0",
+  "desktop_ui": {
+    "name": "jarvis-desktop-ui",
+    "transport": "http",
+    "depends_on": ["brain_api"],
+    "consumes": [
+      "GET /api/v1/system/overview",
+      "GET /api/v1/projects",
+      "POST /api/v1/chat",
+      "GET /api/v1/reports/latest",
+      "GET /api/v1/approvals/pending"
+    ]
+  },
+  "brain_api": {
+    "name": "jarvis-brain-api",
+    "transport": "http",
+    "depends_on": ["local_core", "automation_node", "sqlite_or_postgres"],
+    "publishes": [
+      "GET /api/v1/health",
+      "GET /api/v1/system/overview",
+      "POST /api/v1/decision-memory/query",
+      "POST /api/v1/decision-memory/resolve",
+      "POST /api/v1/approvals/request",
+      "POST /api/v1/approvals/respond",
+      "POST /api/v1/system/emergency-stop",
+      "GET /api/v1/reports/latest"
+    ]
+  },
+  "local_core": {
+    "name": "jarvis-local-core",
+    "transport": "http",
+    "responsibilities": [
+      "guarded command execution",
+      "emergency stop enforcement",
+      "local state inspection",
+      "future file watching and scheduling"
+    ]
+  },
+  "automation_node": {
+    "name": "jarvis-automation-node",
+    "transport": "http",
+    "responsibilities": [
+      "playwright browser automation",
+      "form filling",
+      "social publishing adapters",
+      "future whatsapp bridge worker"
+    ]
+  }
+}
