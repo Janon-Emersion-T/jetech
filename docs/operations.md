@@ -5,7 +5,7 @@
 - `jarvis-start`: starts the backend stack via user `systemd` and launches the desktop UI in the background.
 - `jarvis-stop`: stops the desktop UI and the backend stack.
 - `jarvis-status`: shows the user `systemd` status for the backend services.
-- `jarvis-upgrade`: pulls, reinstalls, migrates selected v1 data, and restarts the backend stack.
+- `jarvis-upgrade`: pulls, reinstalls, and restarts the backend stack.
 - `jarvis-self-evolve`: writes a self-review/evolution task file into `runtime/data/evolution/`.
 
 ## User Services
@@ -25,9 +25,17 @@ systemctl --user stop jarvis-stack.target
 systemctl --user status jarvis-brain.service
 ```
 
-## v1 Migration
+## Legacy Import
 
-Selected data from `/var/www/jarvis/storage` is archived into `runtime/imports/v1/<timestamp>/` and useful state is imported into v2:
+Legacy import is optional and one-time. After import, `v2` runs independently and does not require `/var/www/jarvis` or any other external project folder to remain on disk.
+
+Run manually:
+
+```bash
+/var/www/jetech/scripts/migrate_v1_data.py --apply
+```
+
+Imported data is archived into `runtime/imports/v1/<timestamp>/` and selected state is promoted into the `v2` database:
 
 - project registry
 - recent projects

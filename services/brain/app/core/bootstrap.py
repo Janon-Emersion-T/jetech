@@ -8,6 +8,7 @@ from app.db.session import engine
 from app.models.entities import (
     ApprovalRequest,
     BackupRecord,
+    ChatSession,
     Customer,
     DecisionMemory,
     DeploymentRecord,
@@ -18,11 +19,42 @@ from app.models.entities import (
     PaymentStatusRecord,
     Project,
     ReportRecord,
+    RuntimeDocument,
 )
 from app.services.approvals import generate_approval_token, get_or_create_emergency_state
 
 
 ROOT_DIR = Path(__file__).resolve().parents[4]
+
+
+def ensure_runtime_defaults(db: Session) -> None:
+    if not db.scalar(select(RuntimeDocument).where(RuntimeDocument.key == "prompt_templates")):
+        db.add(
+            RuntimeDocument(
+                category="settings",
+                key="prompt_templates",
+                content='{"general":"You are JARVIS for LKProfessionals. Answer clearly and act carefully.","coding":"You are JARVIS coding mode. Inspect carefully, avoid assumptions, and prefer safe changes.","fast":"You are JARVIS fast mode. Answer briefly and directly.","long_context":"You are JARVIS long-context mode. Analyze deeply and summarize clearly."}',
+            )
+        )
+    if not db.scalar(select(RuntimeDocument).where(RuntimeDocument.key == "social_channels")):
+        db.add(
+            RuntimeDocument(
+                category="settings",
+                key="social_channels",
+                content='{"whatsapp":{"enabled":false,"auto_reply":true,"connection_mode":"web","web_session_name":"default","web_headless":true},"facebook":{"enabled":false,"auto_reply":false},"instagram":{"enabled":false,"auto_reply":false},"linkedin":{"enabled":false,"auto_reply":false},"tiktok":{"enabled":false,"auto_reply":false},"email":{"enabled":false,"auto_reply":false}}',
+            )
+        )
+    if not db.scalar(select(RuntimeDocument).where(RuntimeDocument.key == "system_mode")):
+        db.add(
+            RuntimeDocument(
+                category="settings",
+                key="system_mode",
+                content='{"system_prompt_version":"2.0.0","personality_profile":"corporate-local-first","active_mode":"operations","strict_mode":true,"developer_mode":true,"voice_mode":false}',
+            )
+        )
+    if not db.scalar(select(ChatSession).where(ChatSession.session_key == "bootstrap-session")):
+        db.add(ChatSession(session_key="bootstrap-session", title="Welcome"))
+    db.commit()
 
 
 def initialize_database() -> None:
@@ -31,6 +63,7 @@ def initialize_database() -> None:
 
 def seed_data(db: Session) -> None:
     if db.scalar(select(Customer).limit(1)):
+        ensure_runtime_defaults(db)
         get_or_create_emergency_state(db)
         return
 
@@ -104,6 +137,21 @@ def seed_data(db: Session) -> None:
             ReportRecord(kind="hourly", status="ready", summary="Hourly active project progress summaries are enabled at the data model level."),
             ReportRecord(kind="daily", status="ready", summary="Daily operational summaries are stored for later WhatsApp dispatch."),
             ReportRecord(kind="weekly", status="ready", summary="Weekly business performance reporting pipeline is scaffolded."),
+            RuntimeDocument(
+                category="settings",
+                key="prompt_templates",
+                content='{"general":"You are JARVIS for LKProfessionals. Answer clearly and act carefully.","coding":"You are JARVIS coding mode. Inspect carefully, avoid assumptions, and prefer safe changes.","fast":"You are JARVIS fast mode. Answer briefly and directly.","long_context":"You are JARVIS long-context mode. Analyze deeply and summarize clearly."}',
+            ),
+            RuntimeDocument(
+                category="settings",
+                key="social_channels",
+                content='{"whatsapp":{"enabled":false,"auto_reply":true,"connection_mode":"web","web_session_name":"default","web_headless":true},"facebook":{"enabled":false,"auto_reply":false},"instagram":{"enabled":false,"auto_reply":false},"linkedin":{"enabled":false,"auto_reply":false},"tiktok":{"enabled":false,"auto_reply":false},"email":{"enabled":false,"auto_reply":false}}',
+            ),
+            RuntimeDocument(
+                category="settings",
+                key="system_mode",
+                content='{"system_prompt_version":"2.0.0","personality_profile":"corporate-local-first","active_mode":"operations","strict_mode":true,"developer_mode":true,"voice_mode":false}',
+            ),
             DecisionMemory(
                 category="operations",
                 normalized_key="client never receives source code",
@@ -125,4 +173,5 @@ def seed_data(db: Session) -> None:
     )
 
     db.commit()
+    ensure_runtime_defaults(db)
     get_or_create_emergency_state(db)

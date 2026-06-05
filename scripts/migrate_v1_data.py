@@ -22,8 +22,9 @@ sys.path.insert(0, str(ROOT_DIR / "services" / "brain"))
 
 from app.core.bootstrap import initialize_database
 from app.db.session import SessionLocal
-from app.models.entities import Customer, DecisionMemory, Project
+from app.models.entities import ChatMessage, ChatSession, Customer, Project
 from app.services.decision_memory import store_decision
+from app.services.runtime_documents import set_document
 
 
 SELECTED_FILES = [
@@ -145,6 +146,25 @@ def import_projects(db) -> list[str]:
     return imported
 
 
+def normalize_project_references(db) -> list[str]:
+    normalized = []
+    root_prefix = str(ROOT_DIR.resolve())
+    projects = db.query(Project).filter(Project.stack == "legacy-import").all()
+    for project in projects:
+        if not project.workspace_path:
+            continue
+        resolved = str(Path(project.workspace_path).resolve())
+        if resolved.startswith(root_prefix):
+            continue
+        note = f"Legacy external path archived during migration: {project.workspace_path}"
+        project.known_issues = f"{project.known_issues}\n{note}" if project.known_issues else note
+        project.workspace_path = None
+        db.add(project)
+        normalized.append(project.name)
+    db.commit()
+    return normalized
+
+
 def import_decisions(db) -> list[str]:
     imported = []
     prompt_templates = load_json(V1_STORAGE / "prompt_templates.json") or {}
@@ -195,6 +215,51 @@ def import_decisions(db) -> list[str]:
     return imported
 
 
+def import_runtime_documents(db) -> list[str]:
+    imported = []
+    prompt_templates = load_json(V1_STORAGE / "prompt_templates.json") or {}
+    social_channels = load_json(V1_STORAGE / "social_channels.json") or {}
+    system_mode = load_json(V1_STORAGE / "system_mode.json") or {}
+
+    if prompt_templates:
+        set_document(db, "settings", "prompt_templates", prompt_templates)
+        imported.append("prompt_templates")
+    if social_channels:
+        set_document(db, "settings", "social_channels", social_channels)
+        imported.append("social_channels")
+    if system_mode:
+        set_document(db, "settings", "system_mode", system_mode)
+        imported.append("system_mode")
+    return imported
+
+
+def import_chat_sessions(db) -> int:
+    data = load_json(V1_STORAGE / "chat_sessions.json") or {}
+    sessions = data.get("sessions") or []
+    imported_count = 0
+    for item in sessions:
+        session_key = item.get("id")
+        if not session_key:
+            continue
+        existing = db.query(ChatSession).filter(ChatSession.session_key == session_key).first()
+        if existing:
+            continue
+        session = ChatSession(session_key=session_key, title=item.get("title") or "Imported Chat")
+        db.add(session)
+        db.flush()
+        for message in item.get("messages") or []:
+            db.add(
+                ChatMessage(
+                    session_id=session.id,
+                    role=message.get("role") or "jarvis",
+                    text=message.get("text") or "",
+                )
+            )
+        imported_count += 1
+    db.commit()
+    return imported_count
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Migrate selected Jarvis v1 data into v2.")
     parser.add_argument("--apply", action="store_true", help="Apply the migration.")
@@ -211,14 +276,20 @@ def main() -> int:
     db = SessionLocal()
     try:
         imported_projects = import_projects(db) if args.apply else []
+        normalized_projects = normalize_project_references(db) if args.apply else []
         imported_decisions = import_decisions(db) if args.apply else []
+        imported_documents = import_runtime_documents(db) if args.apply else []
+        imported_chat_sessions = import_chat_sessions(db) if args.apply else 0
     finally:
         db.close()
 
     summary = {
         "archived_items": manifest["copied_items"],
         "imported_projects": imported_projects,
+        "normalized_projects": normalized_projects,
         "imported_decisions": imported_decisions,
+        "imported_documents": imported_documents,
+        "imported_chat_sessions": imported_chat_sessions,
     }
     migration_log = BACKUP_DIR / f"v1-migration-{timestamp}.json"
     migration_log.parent.mkdir(parents=True, exist_ok=True)

@@ -66,6 +66,31 @@ class Project(TimestampedMixin, Base):
     grace_periods: Mapped[list["GracePeriodRecord"]] = relationship(back_populates="project")
 
 
+class ChatSession(TimestampedMixin, Base):
+    __tablename__ = "chat_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_key: Mapped[str] = mapped_column(String(64), unique=True)
+    title: Mapped[str] = mapped_column(String(160), default="New Chat")
+
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.created_at",
+    )
+
+
+class ChatMessage(TimestampedMixin, Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("chat_sessions.id"))
+    role: Mapped[str] = mapped_column(String(20))
+    text: Mapped[str] = mapped_column(Text)
+
+    session: Mapped[ChatSession] = relationship(back_populates="messages")
+
+
 class DomainRecord(TimestampedMixin, Base):
     __tablename__ = "domains"
 
@@ -206,3 +231,12 @@ class SystemState(TimestampedMixin, Base):
     key: Mapped[str] = mapped_column(String(80), unique=True)
     value: Mapped[str] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class RuntimeDocument(TimestampedMixin, Base):
+    __tablename__ = "runtime_documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category: Mapped[str] = mapped_column(String(80))
+    key: Mapped[str] = mapped_column(String(120), unique=True)
+    content: Mapped[str] = mapped_column(Text)

@@ -10,6 +10,7 @@ from app.db.session import SessionLocal, get_db
 from app.models.entities import (
     ApprovalRequest,
     BackupRecord,
+    ChatSession,
     Customer,
     DecisionMemory,
     DeploymentRecord,
@@ -27,17 +28,32 @@ from app.schemas.entities import (
     ApprovalRequestCreate,
     ApprovalResponseCommand,
     ChatRequest,
+    ChatSessionCreate,
+    ChatSessionRename,
     CustomerCreate,
     DecisionMemoryQuery,
     DecisionMemoryResolve,
     EmergencyStopRequest,
     ProjectCreate,
+    PromptTemplatesPayload,
     ReportCreate,
+    SocialChannelsPayload,
+    SystemModePayload,
 )
 from app.services.approvals import STOP_COMMAND, apply_response_command, generate_approval_token, get_or_create_emergency_state
 from app.services.chat import build_chat_response
+from app.services.chat_sessions import (
+    append_message,
+    create_session,
+    delete_session,
+    ensure_session,
+    list_sessions,
+    rename_session,
+    serialize_session,
+)
 from app.services.decision_memory import find_existing_decision, store_decision
 from app.services.reporting import latest_reports_by_kind
+from app.services.runtime_documents import get_document, set_document
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -80,7 +96,45 @@ def system_overview(db: Session = Depends(get_db)) -> dict:
 
 @app.post("/api/v1/chat")
 def chat(request: ChatRequest, db: Session = Depends(get_db)) -> dict:
-    return {"response": build_chat_response(db, request.message)}
+    session = ensure_session(db, request.chat_id)
+    append_message(db, session, "user", request.message)
+    response = build_chat_response(db, request.message)
+    session = append_message(db, session, "jarvis", response)
+    return {"chat_id": session.session_key, "response": response, "session": serialize_session(session)}
+
+
+@app.get("/api/v1/chat/sessions")
+def chat_sessions(db: Session = Depends(get_db)) -> dict:
+    return {"sessions": list_sessions(db)}
+
+
+@app.post("/api/v1/chat/sessions")
+def new_chat_session(payload: ChatSessionCreate, db: Session = Depends(get_db)) -> dict:
+    session = create_session(db, payload.title)
+    return {"session": serialize_session(session)}
+
+
+@app.get("/api/v1/chat/sessions/{session_key}")
+def chat_session_detail(session_key: str, db: Session = Depends(get_db)) -> dict:
+    session = db.query(ChatSession).filter(ChatSession.session_key == session_key).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    return {"session": serialize_session(session)}
+
+
+@app.post("/api/v1/chat/sessions/{session_key}/rename")
+def chat_session_rename(session_key: str, payload: ChatSessionRename, db: Session = Depends(get_db)) -> dict:
+    session = rename_session(db, session_key, payload.title)
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    return {"session": serialize_session(session)}
+
+
+@app.delete("/api/v1/chat/sessions/{session_key}")
+def chat_session_delete(session_key: str, db: Session = Depends(get_db)) -> dict:
+    if not delete_session(db, session_key):
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    return {"ok": True}
 
 
 @app.get("/api/v1/customers")
@@ -210,6 +264,36 @@ def create_report(payload: ReportCreate, db: Session = Depends(get_db)) -> dict:
     db.commit()
     db.refresh(item)
     return {"item": serialize_report(item)}
+
+
+@app.get("/api/v1/settings/prompt-templates")
+def prompt_templates(db: Session = Depends(get_db)) -> dict:
+    return get_document(db, "prompt_templates")
+
+
+@app.post("/api/v1/settings/prompt-templates")
+def save_prompt_templates(payload: PromptTemplatesPayload, db: Session = Depends(get_db)) -> dict:
+    return set_document(db, "settings", "prompt_templates", payload.templates)
+
+
+@app.get("/api/v1/settings/social-channels")
+def social_channels(db: Session = Depends(get_db)) -> dict:
+    return get_document(db, "social_channels")
+
+
+@app.post("/api/v1/settings/social-channels")
+def save_social_channels(payload: SocialChannelsPayload, db: Session = Depends(get_db)) -> dict:
+    return set_document(db, "settings", "social_channels", payload.channels)
+
+
+@app.get("/api/v1/settings/system-mode")
+def system_mode(db: Session = Depends(get_db)) -> dict:
+    return get_document(db, "system_mode")
+
+
+@app.post("/api/v1/settings/system-mode")
+def save_system_mode(payload: SystemModePayload, db: Session = Depends(get_db)) -> dict:
+    return set_document(db, "settings", "system_mode", payload.settings)
 
 
 def serialize_customer(item: Customer) -> dict:

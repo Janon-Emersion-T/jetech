@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ChatRequest(BaseModel):
     message: str
+    chat_id: str | None = None
 
 
 class CustomerCreate(BaseModel):
@@ -60,3 +61,23 @@ class ReportCreate(BaseModel):
 
 class EmergencyStopRequest(BaseModel):
     command_text: str
+
+
+class ChatSessionCreate(BaseModel):
+    title: str | None = None
+
+
+class ChatSessionRename(BaseModel):
+    title: str
+
+
+class PromptTemplatesPayload(BaseModel):
+    templates: dict[str, str]
+
+
+class SocialChannelsPayload(BaseModel):
+    channels: dict
+
+
+class SystemModePayload(BaseModel):
+    settings: dict
