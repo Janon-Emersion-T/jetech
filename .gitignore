@@ -8,6 +8,9 @@ runtime/data/*.db
 runtime/logs/*.log
 runtime/backups/*
 !runtime/backups/.gitkeep
+runtime/imports/
+runtime/data/evolution/
+apps/runtime/
 apps/desktop-ui/dist/
 services/automation-node/node_modules/
 services/local-core-rs/target/

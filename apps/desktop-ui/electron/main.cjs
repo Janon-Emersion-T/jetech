@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, Notification } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
-const appRoot = path.join(__dirname, "../..");
+const appRoot = path.join(__dirname, "../../..");
 const logDir = path.join(appRoot, "runtime", "logs");
 const desktopLogPath = path.join(logDir, "desktop-ui.log");
 const distIndex = path.join(__dirname, "../dist/index.html");
