@@ -69,8 +69,10 @@ function createWindow() {
     writeDesktopLog(`Renderer process gone: ${JSON.stringify(details)}`);
   });
 
-  mainWindow.webContents.on("console-message", (_, level, message, line, sourceId) => {
-    writeDesktopLog(`Renderer console [${level}] ${sourceId}:${line} ${message}`);
+  mainWindow.webContents.on("console-message", (_, details) => {
+    writeDesktopLog(
+      `Renderer console [${details.level}] ${details.sourceId}:${details.lineNumber} ${details.message}`
+    );
   });
 }
 
