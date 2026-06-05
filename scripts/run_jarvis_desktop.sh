@@ -28,7 +28,6 @@ if [[ ! -f "${UI_DIR}/dist/index.html" ]]; then
 fi
 
 BRAIN_PYTHON="${BRAIN_DIR}/.venv/bin/python"
-ELECTRON_BIN="${UI_DIR}/node_modules/.bin/electron"
 BRAIN_LOG="${LOG_DIR}/brain-api.log"
 CORE_LOG="${LOG_DIR}/local-core.log"
 AUTOMATION_LOG="${LOG_DIR}/automation-node.log"
@@ -73,6 +72,6 @@ PY
 done
 
 cd "${UI_DIR}"
-JARVIS_BRAIN_API_URL="http://127.0.0.1:8000" "${ELECTRON_BIN}" . --no-sandbox
+JARVIS_BRAIN_API_URL="http://127.0.0.1:8000" npm run desktop
 ELECTRON_PID=$!
 wait "${ELECTRON_PID}"
